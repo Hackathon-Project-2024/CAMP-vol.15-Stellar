@@ -25,7 +25,7 @@ const AiAssistantPage = () => {
 				boxSizing: 'border-box',
 			}}
 		>
-			<Grid container spacing={2} sx={{ height: '100%', margin: '0 auto' }}>
+			<Grid container sx={{ height: '100%', margin: '0 auto' }}>
 				{/* 左側: 30% */}
 				<Grid
 					item

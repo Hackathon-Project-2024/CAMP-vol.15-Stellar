@@ -114,7 +114,7 @@ export default function Header() {
 			</AppBar>
 
 			{/* Drawer */}
-			<Box sx={{ margin: '64px 0 0 0' }}>
+			<Box sx={{ margin: '56px 0 0 0' }}>
 				<CustomDrawer
 					anchor="left"
 					open={isDrawerOpen}

@@ -415,247 +415,6 @@
 
 // 有効的なもの
 
-// import { NextRequest, NextResponse } from 'next/server';
-// import axios from 'axios';
-// import { Buffer } from 'buffer';
-
-// const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-// const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-
-// interface Message {
-// 	sender: 'user' | 'assistant';
-// 	content: string;
-// }
-
-// // テキスト生成用のリクエストボディ型
-// interface GenerateTextRequest {
-// 	message: string;
-// 	textModelId: string;
-// 	previousMessages?: Message[];
-// 	instructions?: string;
-// 	mode?: 'text' | 'audio'; // modeフィールドはあれば利用（デフォルトは"text"）
-// }
-
-// // 音声生成用のリクエストボディ型
-// interface GenerateAudioRequest {
-// 	text: string;
-// 	voiceModelId: string;
-// 	mode?: 'text' | 'audio';
-// }
-
-// // アシスタントIDに基づいた指示を取得する関数
-// async function getAssistantInstructions(
-// 	textModelId: string,
-// 	apiKey: string
-// ): Promise<string> {
-// 	const assistantDetailsUrl = `https://api.openai.com/v1/assistants/${textModelId}`;
-
-// 	try {
-// 		const response = await axios.get(assistantDetailsUrl, {
-// 			headers: {
-// 				Authorization: `Bearer ${apiKey}`,
-// 				'OpenAI-Beta': 'assistants=v2',
-// 			},
-// 		});
-
-// 		if (response.status === 200 && response.data.instructions) {
-// 			return response.data.instructions;
-// 		} else {
-// 			console.warn(
-// 				`Assistant instructions not found for ID ${textModelId}. Using default instruction.`
-// 			);
-// 			return 'あなたは有能なアシスタントです。';
-// 		}
-// 	} catch (error) {
-// 		if (axios.isAxiosError(error)) {
-// 			console.error(
-// 				`Error fetching assistant instructions for ID ${textModelId}:`,
-// 				error.response?.data || error.message
-// 			);
-// 		} else if (error instanceof Error) {
-// 			console.error(
-// 				`Error fetching assistant instructions for ID ${textModelId}:`,
-// 				error.message
-// 			);
-// 		} else {
-// 			console.error(
-// 				`Unknown error occurred while fetching assistant instructions for ID ${textModelId}`
-// 			);
-// 		}
-// 		return 'あなたは有能なアシスタントです。';
-// 	}
-// }
-
-// // CORS ヘッダーを設定するヘルパー関数
-// function setCORSHeaders(response: NextResponse) {
-// 	response.headers.set('Access-Control-Allow-Origin', '*');
-// 	response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-// 	response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
-// 	return response;
-// }
-
-// // OPTIONSメソッドのハンドラ（プリフライト対応）
-// export async function OPTIONS() {
-// 	const response = new NextResponse(null, { status: 200 });
-// 	return setCORSHeaders(response);
-// }
-
-// // ---------- テキスト生成処理 ----------
-// async function generateText(body: GenerateTextRequest): Promise<NextResponse> {
-// 	const { message, textModelId, previousMessages, instructions } = body;
-
-// 	if (!message || !textModelId) {
-// 		console.warn('Invalid request (text):', { message, textModelId });
-// 		return NextResponse.json(
-// 			{ error: 'モデル名とメッセージが必要です。' },
-// 			{ status: 400 }
-// 		);
-// 	}
-
-// 	if (!OPENAI_API_KEY) {
-// 		console.error('OpenAI APIキーが設定されていません。');
-// 		return NextResponse.json(
-// 			{ error: 'OpenAI APIキーが設定されていません。' },
-// 			{ status: 500 }
-// 		);
-// 	}
-
-// 	// 指示文はリクエストに含まれていれば優先、なければ取得
-// 	const assistantInstructions =
-// 		instructions ||
-// 		(await getAssistantInstructions(textModelId, OPENAI_API_KEY));
-
-// 	// メッセージペイロードを構築
-// 	const messagesPayload = [
-// 		{ role: 'system', content: assistantInstructions },
-// 		...(previousMessages || []).map((msg: Message) => ({
-// 			role: msg.sender === 'user' ? 'user' : 'assistant',
-// 			content: msg.content,
-// 		})),
-// 		{ role: 'user', content: message },
-// 	];
-
-// 	// OpenAI API にテキスト生成リクエスト
-// 	const openAiResponse = await axios.post(
-// 		'https://api.openai.com/v1/chat/completions',
-// 		{
-// 			model: 'gpt-4o-mini', // 必要に応じて変更
-// 			messages: messagesPayload,
-// 		},
-// 		{
-// 			headers: {
-// 				'Content-Type': 'application/json',
-// 				Authorization: `Bearer ${OPENAI_API_KEY}`,
-// 			},
-// 		}
-// 	);
-
-// 	const assistantMessage =
-// 		openAiResponse.data.choices[0]?.message?.content ||
-// 		'No response from assistant.';
-// 	return NextResponse.json({ response: assistantMessage });
-// }
-
-// // ---------- 音声生成処理 ----------
-// async function generateAudio(
-// 	body: GenerateAudioRequest
-// ): Promise<NextResponse> {
-// 	const { text, voiceModelId } = body;
-
-// 	if (!text || !voiceModelId) {
-// 		console.warn('Invalid request (audio):', { text, voiceModelId });
-// 		return NextResponse.json(
-// 			{ error: '音声生成には音声モデルとテキストが必要です。' },
-// 			{ status: 400 }
-// 		);
-// 	}
-
-// 	if (!ELEVENLABS_API_KEY) {
-// 		console.error('ElevenLabsのAPIキーが設定されていません。');
-// 		return NextResponse.json(
-// 			{ error: 'ElevenLabsのAPIキーが設定されていません。' },
-// 			{ status: 500 }
-// 		);
-// 	}
-
-// 	// ElevenLabs API に音声生成リクエスト
-// 	const audioResponse = await axios.post(
-// 		`https://api.elevenlabs.io/v1/text-to-speech/${voiceModelId}`,
-// 		{
-// 			text: text,
-// 			model_id: 'eleven_multilingual_v2',
-// 			voice_settings: {
-// 				stability: 1.0,
-// 				similarity_boost: 1.0,
-// 				style: 0.5,
-// 			},
-// 		},
-// 		{
-// 			headers: {
-// 				'Content-Type': 'application/json',
-// 				'xi-api-key': ELEVENLABS_API_KEY,
-// 			},
-// 			responseType: 'arraybuffer',
-// 		}
-// 	);
-
-// 	if (audioResponse.status !== 200) {
-// 		throw new Error(`ElevenLabs API Error: ${audioResponse.statusText}`);
-// 	}
-
-// 	// ArrayBuffer を Uint8Array 経由で Buffer に変換
-// 	const audioBuffer = Buffer.from(new Uint8Array(audioResponse.data));
-// 	const audioBase64 = audioBuffer.toString('base64');
-// 	const audioUrl = `data:audio/mpeg;base64,${audioBase64}`;
-// 	return NextResponse.json({ audioUrl });
-// }
-
-// // ---------- POSTメソッドのハンドラ ----------
-// export async function POST(request: NextRequest) {
-// 	try {
-// 		// リクエストボディ全体の型は、modeによって変化するのでここではany型から適宜キャスト
-// 		const body = await request.json();
-// 		const mode: 'text' | 'audio' = body.mode || 'text';
-
-// 		if (mode === 'text') {
-// 			return setCORSHeaders(await generateText(body as GenerateTextRequest));
-// 		} else if (mode === 'audio') {
-// 			return setCORSHeaders(await generateAudio(body as GenerateAudioRequest));
-// 		} else {
-// 			return setCORSHeaders(
-// 				NextResponse.json(
-// 					{ error: '無効なモードが指定されました。' },
-// 					{ status: 400 }
-// 				)
-// 			);
-// 		}
-// 	} catch (error) {
-// 		if (axios.isAxiosError(error)) {
-// 			console.error(
-// 				'Error in chatbot API:',
-// 				error.response?.data || error.message
-// 			);
-// 		} else if (error instanceof Error) {
-// 			console.error('Error in chatbot API:', error.message);
-// 		} else {
-// 			console.error('Unknown error occurred in chatbot API');
-// 		}
-
-// 		const errorMessage = axios.isAxiosError(error)
-// 			? error.response?.data?.error?.message || error.message
-// 			: error instanceof Error
-// 				? error.message
-// 				: 'Unknown error';
-
-// 		return setCORSHeaders(
-// 			NextResponse.json(
-// 				{ error: 'Failed to process the message.', details: errorMessage },
-// 				{ status: 500 }
-// 			)
-// 		);
-// 	}
-// }
-
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { Buffer } from 'buffer';
@@ -674,14 +433,14 @@ interface GenerateTextRequest {
 	textModelId: string;
 	previousMessages?: Message[];
 	instructions?: string;
-	// mode は使用しません
+	mode?: 'text' | 'audio'; // modeフィールドはあれば利用（デフォルトは"text"）
 }
 
 // 音声生成用のリクエストボディ型
 interface GenerateAudioRequest {
 	text: string;
 	voiceModelId: string;
-	// mode は使用しません
+	mode?: 'text' | 'audio';
 }
 
 // アシスタントIDに基づいた指示を取得する関数
@@ -852,42 +611,45 @@ async function generateAudio(
 }
 
 // ---------- POSTメソッドのハンドラ ----------
-// テキスト生成後に、続けて音声生成を行い、両方の結果を返す
 export async function POST(request: NextRequest) {
 	try {
+		// リクエストボディ全体の型は、modeによって変化するのでここではany型から適宜キャスト
 		const body = await request.json();
-		// 入力チェック
-		if (!body.message || !body.textModelId || !body.voiceModelId) {
-			console.warn('Invalid request:', {
-				message: body.message,
-				textModelId: body.textModelId,
-				voiceModelId: body.voiceModelId,
-			});
+		const mode: 'text' | 'audio' = body.mode || 'text';
+
+		if (mode === 'text') {
+			// まずテキスト生成処理を実行
+			const textResponse = await generateText(body as GenerateTextRequest);
+			const textData = await textResponse.json();
+
+			// voiceModelId が指定されていれば、生成されたテキストを元に音声生成も実行
+			let audioUrl = null;
+			if (body.voiceModelId) {
+				const audioResponse = await generateAudio({
+					text: textData.response,
+					voiceModelId: body.voiceModelId,
+				});
+				const audioData = await audioResponse.json();
+				audioUrl = audioData.audioUrl;
+			}
+
+			// JSON のプロパティ順をテキスト (response) → 音声 (audioUrl) の順にする
+			return setCORSHeaders(
+				NextResponse.json({
+					response: textData.response,
+					audioUrl: audioUrl,
+				})
+			);
+		} else if (mode === 'audio') {
+			return setCORSHeaders(await generateAudio(body as GenerateAudioRequest));
+		} else {
 			return setCORSHeaders(
 				NextResponse.json(
-					{ error: 'モデル名、音声モデル、メッセージが必要です。' },
+					{ error: '無効なモードが指定されました。' },
 					{ status: 400 }
 				)
 			);
 		}
-
-		// 1. テキスト生成
-		const textResp = await generateText(body as GenerateTextRequest);
-		const textJson = await textResp.json();
-		const assistantText: string = textJson.response;
-
-		// 2. 音声生成（テキスト生成の結果を渡す）
-		const audioResp = await generateAudio({
-			text: assistantText,
-			voiceModelId: body.voiceModelId,
-		} as GenerateAudioRequest);
-		const audioJson = await audioResp.json();
-		const audioUrl: string = audioJson.audioUrl;
-
-		// 両方の結果を返す
-		return setCORSHeaders(
-			NextResponse.json({ response: assistantText, audioUrl })
-		);
 	} catch (error) {
 		if (axios.isAxiosError(error)) {
 			console.error(

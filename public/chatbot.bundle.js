@@ -311,8 +311,8 @@
 
     const sizes = {
       small: { width: '250px', height: '50px', messagesHeight: '0px', next: ['中', '大'] },
-      medium: { width: '350px', height: '400px', messagesHeight: '300px', next: ['小', '大'] },
-      large: { width: '700px', height: '800px', messagesHeight: '750px', next: ['小', '中'] },
+      medium: { width: '350px', height: '400px', messagesHeight: '250px', next: ['小', '大'] },
+      large: { width: '700px', height: '800px', messagesHeight: '700px', next: ['小', '中'] },
     };
 
     let currentSize = 'medium';

@@ -123,15 +123,15 @@ const ApiAi: React.FC = () => {
 	const generateEmbedCode = () => {
 		const embedCode = `
             <script src="https://camp-vol-15-stellar.vercel.app/chatbot.bundle.js"></script>
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    initializeChatbot({
-                        textModelId: '${textModel}',
-                        voiceModelId: '${voiceModel}',
-                        apiUrl: 'https://camp-vol-15-stellar.vercel.app/api/chatbot'
-                    });
-                });
-            </script>
+<script>
+	document.addEventListener('DOMContentLoaded', function() {
+		initializeChatbot({
+			textModelId: '${textModel}',
+			voiceModelId: '${voiceModel}',
+			apiUrl: 'https://camp-vol-15-stellar.vercel.app/api/chatbot'
+		});
+	});
+</script>
         `;
 		return embedCode.trim();
 	};

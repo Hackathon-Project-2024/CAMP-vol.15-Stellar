@@ -174,18 +174,17 @@
 // 	};
 // })();
 
-
 (function () {
 	function formatMessage(text) {
 		// HTMLエスケープ
 		let escapedText = text
-			.replace(/&/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;");
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;');
 		// **で囲まれた部分を<strong>タグに変換
-		escapedText = escapedText.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+		escapedText = escapedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 		// 改行文字を<br>に変換
-		escapedText = escapedText.replace(/\n/g, "<br>");
+		escapedText = escapedText.replace(/\n/g, '<br>');
 		return escapedText;
 	}
 
@@ -319,7 +318,9 @@
 				if (response.ok) {
 					// 正常時のアシスタントのメッセージ表示
 					const assistantMsgDiv = document.createElement('div');
-					assistantMsgDiv.innerHTML = formatMessage(data.response || 'アシスタントからの応答がありません。');
+					assistantMsgDiv.innerHTML = formatMessage(
+						data.response || 'アシスタントからの応答がありません。'
+					);
 					assistantMsgDiv.style.textAlign = 'left';
 					assistantMsgDiv.style.marginBottom = '10px';
 					assistantMsgDiv.style.backgroundColor = '#f1f1f1';

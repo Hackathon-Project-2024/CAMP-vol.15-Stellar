@@ -297,13 +297,14 @@
         </div>
       </div>
       <div id="chatbot-body">
-        <div id="chatbot-messages" style="height: 250px; overflow-y: auto; padding: 10px; background-color: #f9f9f9;"></div>
+        <div id="chatbot-messages" style="height: 250px; overflow-y: auto; padding: 10px; background-color: #f9f9f9; word-break: break-all;"></div>
         <div id="chatbot-input-container" style="padding: 10px; display: flex; gap: 10px; background-color: #f1f1f1;">
           <input type="text" id="chatbot-input" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;" placeholder="メッセージを入力..." />
           <button id="chatbot-send" style="padding: 8px 16px; background-color: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">送信</button>
         </div>
       </div>
     `;
+
 
     document.body.appendChild(chatbotContainer);
 
@@ -312,7 +313,7 @@
     const sizes = {
       small: { width: '250px', height: '50px', messagesHeight: '0px', next: ['中', '大'] },
       medium: { width: '350px', height: '400px', messagesHeight: '250px', next: ['小', '大'] },
-      large: { width: '700px', height: '800px', messagesHeight: '700px', next: ['小', '中'] },
+      large: { width: '700px', height: '750px', messagesHeight: '600px', next: ['小', '中'] },
     };
 
     let currentSize = 'medium';

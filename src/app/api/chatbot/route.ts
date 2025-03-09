@@ -413,6 +413,224 @@
 // 	}
 // }
 
+// import { NextRequest, NextResponse } from 'next/server';
+// import axios from 'axios';
+// import { Buffer } from 'buffer';
+
+// const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+// const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
+
+// interface Message {
+// 	sender: 'user' | 'assistant';
+// 	content: string;
+// }
+
+// // アシスタントIDに基づいた指示を取得する関数
+// async function getAssistantInstructions(
+// 	textModelId: string,
+// 	apiKey: string
+// ): Promise<string> {
+// 	const assistantDetailsUrl = `https://api.openai.com/v1/assistants/${textModelId}`;
+
+// 	try {
+// 		const response = await axios.get(assistantDetailsUrl, {
+// 			headers: {
+// 				Authorization: `Bearer ${apiKey}`,
+// 				'OpenAI-Beta': 'assistants=v2', // 必要に応じて適切なヘッダーを設定
+// 			},
+// 		});
+
+// 		if (response.status === 200 && response.data.instructions) {
+// 			return response.data.instructions;
+// 		} else {
+// 			console.warn(
+// 				`Assistant instructions not found for ID ${textModelId}. Using default instruction.`
+// 			);
+// 			return 'あなたは有能なアシスタントです。';
+// 		}
+// 	} catch (error) {
+// 		if (axios.isAxiosError(error)) {
+// 			console.error(
+// 				`Error fetching assistant instructions for ID ${textModelId}:`,
+// 				error.response?.data || error.message
+// 			);
+// 		} else if (error instanceof Error) {
+// 			console.error(
+// 				`Error fetching assistant instructions for ID ${textModelId}:`,
+// 				error.message
+// 			);
+// 		} else {
+// 			console.error(
+// 				`Unknown error occurred while fetching assistant instructions for ID ${textModelId}`
+// 			);
+// 		}
+// 		return 'あなたは有能なアシスタントです。';
+// 	}
+// }
+
+// // CORS ヘッダーを設定するヘルパー関数
+// function setCORSHeaders(response: NextResponse) {
+// 	response.headers.set('Access-Control-Allow-Origin', '*'); // 必要に応じてオリジンを制限
+// 	response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+// 	response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+// 	return response;
+// }
+
+// // OPTIONSメソッドのハンドラ（プリフライト要求対応）
+// export async function OPTIONS() {
+// 	const response = new NextResponse(null, { status: 200 });
+// 	return setCORSHeaders(response);
+// }
+
+// // POSTメソッドのハンドラ
+// export async function POST(request: NextRequest) {
+// 	try {
+// 		// サイト側のコードと同様に、previousMessagesやinstructionsも受け取る
+// 		const {
+// 			message,
+// 			textModelId,
+// 			voiceModelId,
+// 			previousMessages,
+// 			instructions,
+// 		} = await request.json();
+
+// 		if (!message || !textModelId || !voiceModelId) {
+// 			console.warn('Invalid request:', { message, textModelId, voiceModelId });
+// 			return setCORSHeaders(
+// 				NextResponse.json(
+// 					{
+// 						error:
+// 							'Invalid request: model ID, voice ID, and message are required.',
+// 					},
+// 					{ status: 400 }
+// 				)
+// 			);
+// 		}
+
+// 		// APIキーの存在チェック
+// 		if (!OPENAI_API_KEY) {
+// 			console.error('OpenAI APIキーが設定されていません。');
+// 			return setCORSHeaders(
+// 				NextResponse.json(
+// 					{ error: 'OpenAI APIキーが設定されていません。' },
+// 					{ status: 500 }
+// 				)
+// 			);
+// 		}
+// 		if (!ELEVENLABS_API_KEY) {
+// 			console.error('ElevenLabsのAPIキーが設定されていません。');
+// 			return setCORSHeaders(
+// 				NextResponse.json(
+// 					{ error: 'ElevenLabsのAPIキーが設定されていません。' },
+// 					{ status: 500 }
+// 				)
+// 			);
+// 		}
+
+// 		// 指示文（instructions）は、リクエストに含まれていれば優先し、なければgetAssistantInstructionsで取得
+// 		const assistantInstructions =
+// 			instructions ||
+// 			(await getAssistantInstructions(textModelId, OPENAI_API_KEY));
+
+// 		// サイト側と同じロジックでメッセージペイロードを構築
+// 		const messagesPayload = [
+// 			{
+// 				role: 'system',
+// 				content: assistantInstructions,
+// 			},
+// 			...(previousMessages || []).map((msg: Message) => ({
+// 				role: msg.sender === 'user' ? 'user' : 'assistant',
+// 				content: msg.content,
+// 			})),
+// 			{
+// 				role: 'user',
+// 				content: message,
+// 			},
+// 		];
+
+// 		// OpenAI API にチャットリクエスト
+// 		const openAiResponse = await axios.post(
+// 			'https://api.openai.com/v1/chat/completions',
+// 			{
+// 				model: 'gpt-4o-mini', // 必要に応じて適切なモデル名に変更
+// 				messages: messagesPayload,
+// 			},
+// 			{
+// 				headers: {
+// 					'Content-Type': 'application/json',
+// 					Authorization: `Bearer ${OPENAI_API_KEY}`,
+// 				},
+// 			}
+// 		);
+
+// 		const assistantMessage =
+// 			openAiResponse.data.choices[0]?.message?.content ||
+// 			'No response from assistant.';
+
+// 		// ElevenLabs API を使用して音声生成
+// 		const audioResponse = await axios.post(
+// 			`https://api.elevenlabs.io/v1/text-to-speech/${voiceModelId}`,
+// 			{
+// 				text: assistantMessage,
+// 				model_id: 'eleven_multilingual_v2',
+// 				voice_settings: {
+// 					stability: 1.0,
+// 					similarity_boost: 1.0,
+// 					style: 0.5,
+// 				},
+// 			},
+// 			{
+// 				headers: {
+// 					'Content-Type': 'application/json',
+// 					'xi-api-key': ELEVENLABS_API_KEY,
+// 				},
+// 				responseType: 'arraybuffer',
+// 			}
+// 		);
+
+// 		if (audioResponse.status !== 200) {
+// 			throw new Error(`ElevenLabs API Error: ${audioResponse.statusText}`);
+// 		}
+
+// 		// 音声データを Base64 に変換してURL化
+// 		const audioBase64 = Buffer.from(audioResponse.data, 'binary').toString(
+// 			'base64'
+// 		);
+// 		const audioUrl = `data:audio/mpeg;base64,${audioBase64}`;
+
+// 		return setCORSHeaders(
+// 			NextResponse.json({
+// 				response: assistantMessage,
+// 				audioUrl,
+// 			})
+// 		);
+// 	} catch (error) {
+// 		if (axios.isAxiosError(error)) {
+// 			console.error(
+// 				'Error in chatbot API:',
+// 				error.response?.data || error.message
+// 			);
+// 		} else if (error instanceof Error) {
+// 			console.error('Error in chatbot API:', error.message);
+// 		} else {
+// 			console.error('Unknown error occurred in chatbot API');
+// 		}
+
+// 		const errorMessage = axios.isAxiosError(error)
+// 			? error.response?.data?.error?.message || error.message
+// 			: error instanceof Error
+// 				? error.message
+// 				: 'Unknown error';
+
+// 		return setCORSHeaders(
+// 			NextResponse.json(
+// 				{ error: 'Failed to process the message.', details: errorMessage },
+// 				{ status: 500 }
+// 			)
+// 		);
+// 	}
+// }
+
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { Buffer } from 'buffer';
@@ -423,6 +641,22 @@ const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 interface Message {
 	sender: 'user' | 'assistant';
 	content: string;
+}
+
+// テキスト生成用のリクエストボディ型
+interface GenerateTextRequest {
+	message: string;
+	textModelId: string;
+	previousMessages?: Message[];
+	instructions?: string;
+	mode?: 'text' | 'audio'; // modeフィールドはあれば利用（デフォルトは"text"）
+}
+
+// 音声生成用のリクエストボディ型
+interface GenerateAudioRequest {
+	text: string;
+	voiceModelId: string;
+	mode?: 'text' | 'audio';
 }
 
 // アシスタントIDに基づいた指示を取得する関数
@@ -436,7 +670,7 @@ async function getAssistantInstructions(
 		const response = await axios.get(assistantDetailsUrl, {
 			headers: {
 				Authorization: `Bearer ${apiKey}`,
-				'OpenAI-Beta': 'assistants=v2', // 必要に応じて適切なヘッダーを設定
+				'OpenAI-Beta': 'assistants=v2',
 			},
 		});
 
@@ -470,140 +704,147 @@ async function getAssistantInstructions(
 
 // CORS ヘッダーを設定するヘルパー関数
 function setCORSHeaders(response: NextResponse) {
-	response.headers.set('Access-Control-Allow-Origin', '*'); // 必要に応じてオリジンを制限
+	response.headers.set('Access-Control-Allow-Origin', '*');
 	response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 	response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
 	return response;
 }
 
-// OPTIONSメソッドのハンドラ（プリフライト要求対応）
+// OPTIONSメソッドのハンドラ（プリフライト対応）
 export async function OPTIONS() {
 	const response = new NextResponse(null, { status: 200 });
 	return setCORSHeaders(response);
 }
 
-// POSTメソッドのハンドラ
+// ---------- テキスト生成処理 ----------
+async function generateText(body: GenerateTextRequest): Promise<NextResponse> {
+	const { message, textModelId, previousMessages, instructions } = body;
+
+	if (!message || !textModelId) {
+		console.warn('Invalid request (text):', { message, textModelId });
+		return NextResponse.json(
+			{ error: 'モデル名とメッセージが必要です。' },
+			{ status: 400 }
+		);
+	}
+
+	if (!OPENAI_API_KEY) {
+		console.error('OpenAI APIキーが設定されていません。');
+		return NextResponse.json(
+			{ error: 'OpenAI APIキーが設定されていません。' },
+			{ status: 500 }
+		);
+	}
+
+	// 指示文はリクエストに含まれていれば優先、なければ取得
+	const assistantInstructions =
+		instructions ||
+		(await getAssistantInstructions(textModelId, OPENAI_API_KEY));
+
+	// メッセージペイロードを構築
+	const messagesPayload = [
+		{ role: 'system', content: assistantInstructions },
+		...(previousMessages || []).map((msg: Message) => ({
+			role: msg.sender === 'user' ? 'user' : 'assistant',
+			content: msg.content,
+		})),
+		{ role: 'user', content: message },
+	];
+
+	// OpenAI API にテキスト生成リクエスト
+	const openAiResponse = await axios.post(
+		'https://api.openai.com/v1/chat/completions',
+		{
+			model: 'gpt-4o-mini', // 必要に応じて変更
+			messages: messagesPayload,
+		},
+		{
+			headers: {
+				'Content-Type': 'application/json',
+				Authorization: `Bearer ${OPENAI_API_KEY}`,
+			},
+		}
+	);
+
+	const assistantMessage =
+		openAiResponse.data.choices[0]?.message?.content ||
+		'No response from assistant.';
+	return NextResponse.json({ response: assistantMessage });
+}
+
+// ---------- 音声生成処理 ----------
+async function generateAudio(
+	body: GenerateAudioRequest
+): Promise<NextResponse> {
+	const { text, voiceModelId } = body;
+
+	if (!text || !voiceModelId) {
+		console.warn('Invalid request (audio):', { text, voiceModelId });
+		return NextResponse.json(
+			{ error: '音声生成には音声モデルとテキストが必要です。' },
+			{ status: 400 }
+		);
+	}
+
+	if (!ELEVENLABS_API_KEY) {
+		console.error('ElevenLabsのAPIキーが設定されていません。');
+		return NextResponse.json(
+			{ error: 'ElevenLabsのAPIキーが設定されていません。' },
+			{ status: 500 }
+		);
+	}
+
+	// ElevenLabs API に音声生成リクエスト
+	const audioResponse = await axios.post(
+		`https://api.elevenlabs.io/v1/text-to-speech/${voiceModelId}`,
+		{
+			text: text,
+			model_id: 'eleven_multilingual_v2',
+			voice_settings: {
+				stability: 1.0,
+				similarity_boost: 1.0,
+				style: 0.5,
+			},
+		},
+		{
+			headers: {
+				'Content-Type': 'application/json',
+				'xi-api-key': ELEVENLABS_API_KEY,
+			},
+			responseType: 'arraybuffer',
+		}
+	);
+
+	if (audioResponse.status !== 200) {
+		throw new Error(`ElevenLabs API Error: ${audioResponse.statusText}`);
+	}
+
+	const audioBase64 = Buffer.from(audioResponse.data, 'binary').toString(
+		'base64'
+	);
+	const audioUrl = `data:audio/mpeg;base64,${audioBase64}`;
+	return NextResponse.json({ audioUrl });
+}
+
+// ---------- POSTメソッドのハンドラ ----------
 export async function POST(request: NextRequest) {
 	try {
-		// サイト側のコードと同様に、previousMessagesやinstructionsも受け取る
-		const {
-			message,
-			textModelId,
-			voiceModelId,
-			previousMessages,
-			instructions,
-		} = await request.json();
+		// リクエストボディ全体の型は、modeによって変化するのでここではany型から適宜キャスト
+		const body = await request.json();
+		const mode: 'text' | 'audio' = body.mode || 'text';
 
-		if (!message || !textModelId || !voiceModelId) {
-			console.warn('Invalid request:', { message, textModelId, voiceModelId });
+		if (mode === 'text') {
+			return setCORSHeaders(await generateText(body as GenerateTextRequest));
+		} else if (mode === 'audio') {
+			return setCORSHeaders(await generateAudio(body as GenerateAudioRequest));
+		} else {
 			return setCORSHeaders(
 				NextResponse.json(
-					{
-						error:
-							'Invalid request: model ID, voice ID, and message are required.',
-					},
+					{ error: '無効なモードが指定されました。' },
 					{ status: 400 }
 				)
 			);
 		}
-
-		// APIキーの存在チェック
-		if (!OPENAI_API_KEY) {
-			console.error('OpenAI APIキーが設定されていません。');
-			return setCORSHeaders(
-				NextResponse.json(
-					{ error: 'OpenAI APIキーが設定されていません。' },
-					{ status: 500 }
-				)
-			);
-		}
-		if (!ELEVENLABS_API_KEY) {
-			console.error('ElevenLabsのAPIキーが設定されていません。');
-			return setCORSHeaders(
-				NextResponse.json(
-					{ error: 'ElevenLabsのAPIキーが設定されていません。' },
-					{ status: 500 }
-				)
-			);
-		}
-
-		// 指示文（instructions）は、リクエストに含まれていれば優先し、なければgetAssistantInstructionsで取得
-		const assistantInstructions =
-			instructions ||
-			(await getAssistantInstructions(textModelId, OPENAI_API_KEY));
-
-		// サイト側と同じロジックでメッセージペイロードを構築
-		const messagesPayload = [
-			{
-				role: 'system',
-				content: assistantInstructions,
-			},
-			...(previousMessages || []).map((msg: Message) => ({
-				role: msg.sender === 'user' ? 'user' : 'assistant',
-				content: msg.content,
-			})),
-			{
-				role: 'user',
-				content: message,
-			},
-		];
-
-		// OpenAI API にチャットリクエスト
-		const openAiResponse = await axios.post(
-			'https://api.openai.com/v1/chat/completions',
-			{
-				model: 'gpt-4o-mini', // 必要に応じて適切なモデル名に変更
-				messages: messagesPayload,
-			},
-			{
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${OPENAI_API_KEY}`,
-				},
-			}
-		);
-
-		const assistantMessage =
-			openAiResponse.data.choices[0]?.message?.content ||
-			'No response from assistant.';
-
-		// ElevenLabs API を使用して音声生成
-		const audioResponse = await axios.post(
-			`https://api.elevenlabs.io/v1/text-to-speech/${voiceModelId}`,
-			{
-				text: assistantMessage,
-				model_id: 'eleven_multilingual_v2',
-				voice_settings: {
-					stability: 1.0,
-					similarity_boost: 1.0,
-					style: 0.5,
-				},
-			},
-			{
-				headers: {
-					'Content-Type': 'application/json',
-					'xi-api-key': ELEVENLABS_API_KEY,
-				},
-				responseType: 'arraybuffer',
-			}
-		);
-
-		if (audioResponse.status !== 200) {
-			throw new Error(`ElevenLabs API Error: ${audioResponse.statusText}`);
-		}
-
-		// 音声データを Base64 に変換してURL化
-		const audioBase64 = Buffer.from(audioResponse.data, 'binary').toString(
-			'base64'
-		);
-		const audioUrl = `data:audio/mpeg;base64,${audioBase64}`;
-
-		return setCORSHeaders(
-			NextResponse.json({
-				response: assistantMessage,
-				audioUrl,
-			})
-		);
 	} catch (error) {
 		if (axios.isAxiosError(error)) {
 			console.error(

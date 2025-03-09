@@ -149,7 +149,7 @@
     chatbotContainer.style.bottom = '20px';
     chatbotContainer.style.right = '20px';
     chatbotContainer.style.width = '350px';
-    chatbotContainer.style.maxHeight = '400px';
+    chatbotContainer.style.maxHeight = '800px';
     chatbotContainer.style.backgroundColor = '#fff';
     chatbotContainer.style.border = '1px solid #ccc';
     chatbotContainer.style.borderRadius = '8px';
@@ -179,7 +179,7 @@
     const sizeButtons = document.getElementById('size-buttons');
 
     const sizes = {
-      small: { width: '250px', height: '300px', next: ['中', '大'] },
+      small: { width: '250px', height: '50px', next: ['中', '大'] },
       medium: { width: '350px', height: '400px', next: ['小', '大'] },
       large: { width: '700px', height: '800px', next: ['小', '中'] },
     };

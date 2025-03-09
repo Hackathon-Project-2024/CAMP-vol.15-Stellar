@@ -118,7 +118,7 @@ export default function ApiAi() {
 
 	const generateEmbedCode = () => {
 		const embedCode = `
-			<script src="http://localhost:3000/chatbot.bundle.js"></script>
+<script src="http://localhost:3000/chatbot.bundle.js"></script>
 <script>
 	document.addEventListener('DOMContentLoaded', function() {
 		initializeChatbot({

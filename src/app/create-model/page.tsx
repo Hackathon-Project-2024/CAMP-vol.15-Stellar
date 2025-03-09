@@ -27,7 +27,7 @@ const Title = styled(Typography)`
 export default function CreateModel() {
 	const [inputText, setInputText] = useState('');
 	const [name, setName] = useState('');
-	const [model, setModel] = useState('gpt-3.5');
+	const [model, setModel] = useState('gpt-4o-mini');
 
 	const handleSubmit = async () => {
 		try {
